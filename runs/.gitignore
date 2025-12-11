@@ -1,0 +1,2 @@
+# Ignore model weights and runs
+detect/train*/

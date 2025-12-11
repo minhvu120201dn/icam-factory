@@ -1,0 +1,16 @@
+# Ignore virtual environment and cache files
+.venv/
+__pycache__/
+*.pyc
+*.log
+*.csv
+*.cache
+
+# Ignore pretrained models
+*.pt
+
+# Ignore image and text files
+*.mp4
+*.jpg
+*.png
+*.txt
