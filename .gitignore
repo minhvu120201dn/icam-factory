@@ -6,11 +6,5 @@ __pycache__/
 *.csv
 *.cache
 
-# Ignore pretrained models
+# Ignore pretrained model weights
 *.pt
-
-# Ignore image and text files
-*.mp4
-*.jpg
-*.png
-*.txt
