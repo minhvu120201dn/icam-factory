@@ -5,6 +5,7 @@ __pycache__/
 *.log
 *.csv
 *.cache
+icam_factory.egg-info/
 
 # Ignore pretrained model weights
 *.pt
