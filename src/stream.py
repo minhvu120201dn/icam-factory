@@ -3,8 +3,6 @@ import threading
 import cv2
 import time
 
-from config import RTSP_SERVER, N_CAMS
-
 
 class Camera:
     """
@@ -74,19 +72,19 @@ class CameraStreamer:
                     frame_count = 0
                     start_time = time.time()
 
-cams = [
-    Camera(cv2.VideoCapture(f"{RTSP_SERVER}/{i}"))
-    for i in range(N_CAMS)
-]
-
 
 if __name__ == "__main__":
-    camera_streamer = CameraStreamer(cams[0])
+    from config import RTSP_SERVER
+    streamer = CameraStreamer(
+        Camera(
+            cv2.VideoCapture(f"{RTSP_SERVER}/0")
+        )
+    )
     print("Starting frame stream. Press 'q' to quit.")
     
-    for frame in camera_streamer():
+    for frame in streamer():
         # Display FPS on the frame
-        fps_text = f"FPS: {camera_streamer.fps:.2f}"
+        fps_text = f"FPS: {streamer.fps:.2f}"
         cv2.putText(frame, fps_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
         
         # Display the frame
