@@ -51,11 +51,13 @@ def process_stream(
         streamer (CameraStreamer): The CameraStreamer instance.
         stop_event (threading.Event): Event to signal stopping the thread.
     """
+    # Ensure unique window names
     global _existed_windows
     window_name = f"Camera {camera_idx}"
     assert window_name not in _existed_windows, f"Window {window_name} already exists!"
     _existed_windows.add(window_name)
     
+    # Stream frames from the camera
     for frame in streamer():
         # Check if stop event is set
         if stop_event.is_set():
