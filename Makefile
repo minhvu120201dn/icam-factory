@@ -1,6 +1,6 @@
 # Variables
 INPUT_VIDEO ?= datasets/OxfordTownCentre/TownCentreXVID.mp4
-RTSP_URL ?= rtsp://localhost:8554/icam-live
+RTSP_URL ?= rtsp://localhost:8554/0
 
 rtsp_server:
 	ffmpeg \
