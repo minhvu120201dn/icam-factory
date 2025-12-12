@@ -9,6 +9,7 @@ class Camera:
     Camera class to handle video capture and frame retrieval.
     """
     last_frame: Optional[cv2.typing.MatLike] = None
+    fps: float = 0.0
     lock = threading.Lock()
     
     def __init__(self, filename: str, *args, **kwargs):
@@ -25,9 +26,21 @@ class Camera:
         thread.start()
     
     def _update_frame(self):
+        frame_count = 0
+        start_time = time.time()
+        
         while self.vcap.isOpened():
             with self.lock:
-                _, self.last_frame = self.vcap.read()
+                ret, self.last_frame = self.vcap.read()
+                if ret:
+                    frame_count += 1
+                    
+                    # Calculate FPS every second
+                    elapsed_time = time.time() - start_time
+                    if elapsed_time >= 1.0:
+                        self.fps = frame_count / elapsed_time
+                        frame_count = 0
+                        start_time = time.time()
     
     def get_last_frame(self) -> Optional[cv2.typing.MatLike]:
         """Get the last captured frame.
@@ -92,7 +105,7 @@ if __name__ == "__main__":
     
     for frame in streamer():
         # Display FPS on the frame
-        fps_text = f"FPS: {streamer.fps:.2f}"
+        fps_text = f"FPS: {streamer.fps:.2f}, Camera FPS: {streamer.cam.fps:.2f}, Loss FPS: {abs(streamer.fps - streamer.cam.fps):.2f}"
         cv2.putText(frame, fps_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
         
         # Display the frame
