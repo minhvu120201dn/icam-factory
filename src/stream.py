@@ -11,13 +11,15 @@ class Camera:
     last_frame: Optional[cv2.typing.MatLike] = None
     lock = threading.Lock()
     
-    def __init__(self, vcap: cv2.VideoCapture):
+    def __init__(self, filename: str, *args, **kwargs):
         """Initialize the Camera with a video capture object.
 
         Args:
-            vcap (cv2.VideoCapture): Video capture object for the camera.
+            filename (str): The video source filename or stream URL.
+            *args: Additional positional arguments for cv2.VideoCapture.
+            **kwargs: Additional keyword arguments for cv2.VideoCapture.
         """
-        self.vcap = vcap
+        self.vcap = cv2.VideoCapture(filename, *args, **kwargs)
         thread = threading.Thread(target=self._update_frame, args=())
         thread.daemon = True
         thread.start()
@@ -46,8 +48,15 @@ class CameraStreamer:
     """
     Class to stream frames from a Camera instance.
     """
-    def __init__(self, cam: Camera):
-        self.cam = cam
+    def __init__(self, filename: str, *args, **kwargs):
+        """Initialize the CameraStreamer with a video source filename or stream URL.
+
+        Args:
+            filename (str): The video source filename or stream URL.
+            *args: Additional positional arguments for Camera.
+            **kwargs: Additional keyword arguments for Camera.
+        """
+        self.cam = Camera(filename, *args, **kwargs)
         self.fps = 0
     
     def __call__(self) -> Generator[cv2.typing.MatLike, None, None]:
@@ -71,15 +80,14 @@ class CameraStreamer:
                     self.fps = frame_count / elapsed_time  # Update fps attribute
                     frame_count = 0
                     start_time = time.time()
+    
+    def __del__(self):
+        del self.cam
 
 
 if __name__ == "__main__":
     from config import RTSP_SERVER
-    streamer = CameraStreamer(
-        Camera(
-            cv2.VideoCapture(f"{RTSP_SERVER}/0")
-        )
-    )
+    streamer = CameraStreamer(f"{RTSP_SERVER}/0")
     print("Starting frame stream. Press 'q' to quit.")
     
     for frame in streamer():

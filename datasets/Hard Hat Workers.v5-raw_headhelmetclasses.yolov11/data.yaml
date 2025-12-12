@@ -2,8 +2,8 @@ train: ../train/images
 val: ../valid/images
 test: ../test/images
 
-nc: 2
-names: ['head', 'helmet']
+nc: 3
+names: ['head', 'helmet', 'person']
 
 roboflow:
   workspace: joseph-nelson
