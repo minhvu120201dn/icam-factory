@@ -40,11 +40,13 @@ conda create -n icam-factory python=3.13
 conda activate icam-factory
 ```
 
-### 3. Install Python dependencies
+### 3. Install the package
 
 ```bash
-pip install -r requirements.txt
+pip install -e .
 ```
+
+This installs the package in editable mode and creates the `icam` and `icam-zone` commands.
 
 ### 4. Install MediaMTX (RTSP Server)
 
@@ -71,48 +73,9 @@ MODEL_PATH=pretrained/helmet-head-person.pt
 
 ## 📚 Training the Model (Optional)
 
-If you want to train your own model:
+To train your own model, see the training notebook: `notebooks/DetectionModel.ipynb`
 
-### 1. Prepare your dataset
-
-Place your dataset in `datasets/` following YOLO format:
-```
-datasets/
-  YourDataset/
-    data.yaml
-    train/
-      images/
-      labels/
-    valid/
-      images/
-      labels/
-```
-
-### 2. Configure training
-
-Edit the dataset path in your training script or notebook (see `notebooks/1.Head-and-Helmet.ipynb`).
-
-### 3. Train the model
-
-```python
-from ultralytics import YOLO
-
-# Load a pretrained model
-model = YOLO('yolo11n.pt')
-
-# Train the model
-results = model.train(
-    data='datasets/YourDataset/data.yaml',
-    epochs=100,
-    imgsz=640,
-    batch=16,
-    name='helmet-detection'
-)
-```
-
-### 4. Export the trained model
-
-The trained model will be saved in `runs/detect/helmet-detection/weights/best.pt`. Copy it to `pretrained/` and update your `.env` file.
+The trained model will be saved in `runs/detect/train/weights/best.pt`. Copy it to `pretrained/` and update your `.env` file.
 
 ## 🎬 Running the System
 
@@ -160,8 +123,7 @@ The streams will be available at:
 Run the interactive zone definition tool:
 
 ```bash
-cd src
-python zone_definer.py
+icam-zone
 ```
 
 **Instructions:**
@@ -181,8 +143,7 @@ Copy the generated `DANGER_ZONES` dictionary into `src/main.py`.
 ### Step 4: Run the monitoring system
 
 ```bash
-cd src
-python main.py
+icam
 ```
 
 The system will:
@@ -303,7 +264,7 @@ streamers = [
 2. Skip Step 2 (RTSP streaming) and run directly:
 
 ```bash
-python src/main.py
+icam
 ```
 
 ## 🐛 Troubleshooting
