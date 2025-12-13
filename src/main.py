@@ -1,13 +1,12 @@
 import cv2
 import threading
+from queue import Queue
 from ultralytics import YOLO
 
 from stream import CameraStreamer
 from config import RTSP_SERVER, N_CAMS, MODEL_PATH
 from detectors import DangerZoneDetector, NoHelmetDetector
 
-
-model = YOLO(MODEL_PATH)
 
 streamers = [
     CameraStreamer(f"{RTSP_SERVER}/{idx}")
@@ -17,8 +16,9 @@ streamers = [
 # Define danger zones for cameras (example coordinates - adjust as needed)
 # Format: List of (x, y) points defining the polygon
 DANGER_ZONES = {
-    0: [(100, 300), (400, 300), (400, 500), (100, 500)],  # Camera 0
-    1: [(150, 250), (450, 250), (450, 480), (150, 480)],  # Camera 1
+    0: [(559, 175), (766, 73), (766, 156), (704, 201)],  # Camera 0
+    1: [(216, 224), (441, 272), (527, 267), (563, 288), (356, 283), (121, 227)],  # Camera 1
+    2: [(232, 362), (415, 355), (765, 417), (764, 458), (669, 473)],  # Camera 2
 }
 
 # Initialize detectors for each camera
@@ -41,7 +41,8 @@ camera_detectors = {
 def handle_frame(
     frame: cv2.typing.MatLike,
     text: str,
-    detectors: dict
+    detectors: dict,
+    model: YOLO
 ):
     """Handle a single frame: run inference and apply detectors.
     
@@ -49,6 +50,7 @@ def handle_frame(
         frame: The input frame to process.
         text: Text to display on frame.
         detectors: Dictionary of detector instances for this camera.
+        model: YOLO model instance for this thread.
         
     Returns:
         The annotated frame after processing.
@@ -74,12 +76,11 @@ def handle_frame(
     
     return annotated_frame
 
-_existed_windows = set()
-
 def process_stream(
     camera_idx: int,
     streamer: CameraStreamer,
     stop_event: threading.Event,
+    frame_queue: Queue,
 ):
     """Process a single camera stream in a separate thread.
     
@@ -87,12 +88,10 @@ def process_stream(
         camera_idx (int): The index of the camera stream.
         streamer (CameraStreamer): The CameraStreamer instance.
         stop_event (threading.Event): Event to signal stopping the thread.
+        frame_queue (Queue): Queue to send processed frames to main thread.
     """
-    # Ensure unique window names
-    global _existed_windows
-    window_name = f"Camera {camera_idx}"
-    assert window_name not in _existed_windows, f"Window {window_name} already exists!"
-    _existed_windows.add(window_name)
+    # Create a separate YOLO model instance for this thread
+    model = YOLO(MODEL_PATH)
     
     # Get detectors for this camera
     detectors = camera_detectors.get(camera_idx, {})
@@ -116,40 +115,60 @@ def process_stream(
         annotated_frame = handle_frame(
             frame,
             f"Camera {camera_idx} | FPS: {streamer.fps:.2f}",
-            detectors
+            detectors,
+            model
         )
         
-        # Display the annotated frame
-        cv2.imshow(window_name, annotated_frame)
-        
-        # Check for 'q' key to quit
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            stop_event.set()
-            break
-    
-    cv2.destroyWindow(window_name)
+        # Send the processed frame to the main thread for display
+        try:
+            frame_queue.put((camera_idx, annotated_frame), block=False)
+        except:
+            pass  # Queue full, skip this frame
 
 def main():
     print(f"Starting inference on {N_CAMS} camera streams...")
     print("Press 'q' to quit.")
     
     stop_event = threading.Event()
+    frame_queue = Queue(maxsize=N_CAMS * 2)
     
     # Start a thread for each streamer
     threads = []
     for idx, streamer in enumerate(streamers):
-        thread = threading.Thread(target=process_stream, args=(idx, streamer, stop_event))
+        # Create and start thread
+        thread = threading.Thread(target=process_stream, args=(idx, streamer, stop_event, frame_queue))
         thread.daemon = True
         thread.start()
         threads.append(thread)
     
     print(f"Started {len(threads)} camera threads")
     
-    # Wait for all threads to finish
-    for thread in threads:
-        thread.join()
+    # Main thread handles display (OpenCV requires this for thread safety)
+    try:
+        while not stop_event.is_set():
+            # Get processed frames from queue
+            if not frame_queue.empty():
+                camera_idx, annotated_frame = frame_queue.get()
+                window_name = f"Camera {camera_idx}"
+                cv2.imshow(window_name, annotated_frame)
+            
+            # Check for 'q' key to quit
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord('q'):
+                stop_event.set()
+                break
     
-    print("All streams stopped")
+    except KeyboardInterrupt:
+        print("\nInterrupted by user")
+        stop_event.set()
+    
+    finally:
+        # Wait for all threads to finish
+        for thread in threads:
+            thread.join(timeout=2.0)
+        
+        cv2.destroyAllWindows()
+        print("All streams stopped")
 
 if __name__ == "__main__":
     main()
