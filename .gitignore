@@ -10,3 +10,6 @@ icam_factory.egg-info/
 
 # Ignore pretrained model weights
 *.pt
+
+# Ignore data
+alerts/
