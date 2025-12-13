@@ -1,5 +1,7 @@
 # iCAM Factory - Construction Site Safety Monitoring System
 
+![alt text](static/demo.png)
+
 Real-time AI-powered safety monitoring system for construction sites using YOLO object detection and tracking. Detects safety violations including:
 - Workers entering dangerous zones
 - Workers without helmets
