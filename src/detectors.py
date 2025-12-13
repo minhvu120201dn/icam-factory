@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from typing import Tuple, List, Optional
+from typing import Tuple, List
 from ultralytics.engine.results import Results
 
 from alerts import save_alert

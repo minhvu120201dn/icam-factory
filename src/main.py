@@ -1,6 +1,5 @@
 import cv2
 import threading
-from typing import List, Callable
 from ultralytics import YOLO
 
 from stream import CameraStreamer
@@ -41,7 +40,6 @@ camera_detectors = {
 
 def handle_frame(
     frame: cv2.typing.MatLike,
-    camera_id: int,
     text: str,
     detectors: dict
 ):
@@ -49,7 +47,6 @@ def handle_frame(
     
     Args:
         frame: The input frame to process.
-        camera_id: The camera ID.
         text: Text to display on frame.
         detectors: Dictionary of detector instances for this camera.
         
@@ -57,7 +54,7 @@ def handle_frame(
         The annotated frame after processing.
     """
     # Run YOLO model with tracking on the frame
-    results = model.track(frame, persist=True, verbose=False)
+    results = model.track(frame, persist=True, verbose=False, conf=0.5)
     
     # Get annotated frame with detections and tracking IDs
     annotated_frame = results[0].plot()
@@ -70,7 +67,7 @@ def handle_frame(
     if "helmet" in detectors:
         annotated_frame = detectors["helmet"].check_helmet(results, annotated_frame)
     
-    # Show info as text
+    # Show info as textwebm
     if text:
         cv2.putText(annotated_frame, text, (10, 30), 
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
@@ -118,7 +115,6 @@ def process_stream(
         # Handle the frame with appropriate detectors
         annotated_frame = handle_frame(
             frame,
-            camera_idx,
             f"Camera {camera_idx} | FPS: {streamer.fps:.2f}",
             detectors
         )
